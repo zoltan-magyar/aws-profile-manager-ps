@@ -12,8 +12,8 @@
     PrivateData = @{
         PSData = @{
             Tags = @('AWS', 'CLI', 'Profile', 'Management')
-            ProjectUri = 'YOUR-REPO-URL'
-            LicenseUri = 'YOUR-LICENSE-URL'
+            ProjectUri = 'https://github.com/zoltan-magyar/aws-profile-manager-ps'
+            LicenseUri = 'https://github.com/zoltan-magyar/aws-profile-manager-ps/blob/main/LICENSE.md'
         }
     }
 }

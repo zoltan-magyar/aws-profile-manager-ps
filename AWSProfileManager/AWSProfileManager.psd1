@@ -14,6 +14,8 @@
             Tags = @('AWS', 'CLI', 'Profile', 'Management')
             ProjectUri = 'https://github.com/zoltan-magyar/aws-profile-manager-ps'
             LicenseUri = 'https://github.com/zoltan-magyar/aws-profile-manager-ps/blob/main/LICENSE.md'
+            # ReleaseNotes will be automatically updated by the workflow
+            ReleaseNotes = ''
         }
     }
 }

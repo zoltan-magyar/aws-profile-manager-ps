@@ -11,19 +11,58 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
-      - name: Extract version from release
-        id: get_version
+      - name: Extract version and release notes
+        id: get_release_info
         shell: pwsh
         run: |
+          # Get version
           $version = $env:GITHUB_REF -replace 'refs/tags/v', ''
           echo "VERSION=$version" >> $env:GITHUB_OUTPUT
 
-      - name: Update module version
+          # Get release notes using GitHub API
+          $token = '${{ secrets.GITHUB_TOKEN }}'
+          $headers = @{
+            'Authorization' = "Bearer $token"
+            'Accept' = 'application/vnd.github.v3+json'
+          }
+
+          $repo = '${{ github.repository }}'
+          $releaseId = '${{ github.event.release.id }}'
+          $releaseUrl = "https://api.github.com/repos/$repo/releases/$releaseId"
+
+          $release = Invoke-RestMethod -Uri $releaseUrl -Headers $headers
+          $releaseNotes = $release.body
+
+          # Escape multiline release notes for GitHub Actions
+          $escapedNotes = $releaseNotes -replace '%', '%25' -replace '\n', '%0A' -replace '\r', '%0D'
+          echo "RELEASE_NOTES=$escapedNotes" >> $env:GITHUB_OUTPUT
+
+      - name: Update module manifest
         shell: pwsh
         run: |
           $manifestPath = "./AWSProfileManager/AWSProfileManager.psd1"
           $manifest = Get-Content $manifestPath -Raw
-          $manifest = $manifest -replace "ModuleVersion = '.*'", "ModuleVersion = '${{ steps.get_version.outputs.VERSION }}'"
+
+          # Update version
+          $manifest = $manifest -replace "ModuleVersion = '.*'", "ModuleVersion = '${{ steps.get_release_info.outputs.VERSION }}'"
+
+          # Update release notes
+          $releaseNotes = @'
+          ${{ steps.get_release_info.outputs.RELEASE_NOTES }}
+          '@
+
+          # Check if PSData and ReleaseNotes already exist
+          if ($manifest -match "PSData\s*=\s*@{") {
+              if ($manifest -match "ReleaseNotes\s*=") {
+                  # Update existing ReleaseNotes
+                  $manifest = $manifest -replace "(ReleaseNotes\s*=\s*)'[^']*'", "`$1'$($releaseNotes -replace "'", "''")'"
+              }
+              else {
+                  # Add ReleaseNotes to existing PSData
+                  $manifest = $manifest -replace "(PSData\s*=\s*@{)", "`$1`n            ReleaseNotes = '$($releaseNotes -replace "'", "''")'"
+              }
+          }
+
           Set-Content -Path $manifestPath -Value $manifest
 
       - name: Publish to PowerShell Gallery

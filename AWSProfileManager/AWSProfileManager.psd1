@@ -1,6 +1,6 @@
 ﻿@{
     RootModule = 'AWSProfileManager.psm1'
-    ModuleVersion = '1.0.0'
+    ModuleVersion = '0.0.1'
     GUID = 'cffa8901-2f1c-4b8e-b9a4-88f88036de77'
     Author = 'Zoltán Magyar'
     Description = 'A PowerShell module for managing AWS profiles'

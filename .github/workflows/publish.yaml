@@ -1,0 +1,35 @@
+name: Publish PowerShell Module
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  publish:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Extract version from release
+        id: get_version
+        shell: pwsh
+        run: |
+          $version = $env:GITHUB_REF -replace 'refs/tags/v', ''
+          echo "VERSION=$version" >> $env:GITHUB_OUTPUT
+
+      - name: Update module version
+        shell: pwsh
+        run: |
+          $manifestPath = "./AWSProfileManager/AWSProfileManager.psd1"
+          $manifest = Get-Content $manifestPath -Raw
+          $manifest = $manifest -replace "ModuleVersion = '.*'", "ModuleVersion = '${{ steps.get_version.outputs.VERSION }}'"
+          Set-Content -Path $manifestPath -Value $manifest
+
+      - name: Publish to PowerShell Gallery
+        shell: pwsh
+        run: |
+          $modulePath = "./AWSProfileManager"
+          Publish-Module -Path $modulePath -NuGetApiKey ${{ secrets.PS_GALLERY_API_KEY }} -Verbose
+        env:
+          PS_GALLERY_API_KEY: ${{ secrets.PS_GALLERY_API_KEY }}
